@@ -12,6 +12,12 @@ interface ConexionConfig {
   slack_bot_token?: string
   microsoft_client_id?: string
   microsoft_tenant_id?: string
+  smtp_host?: string
+  smtp_port?: string
+  smtp_user?: string
+  smtp_password?: string
+  smtp_from_name?: string
+  smtp_secure?: string
 }
 
 type PropertyTipo =
@@ -727,6 +733,24 @@ export default function Configuracion() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const saveSmtp = async () => {
+    setSaving(true)
+    await supabase.from('app_config').upsert({
+      id: 1,
+      config: {
+        smtp_host: config.smtp_host,
+        smtp_port: config.smtp_port,
+        smtp_user: config.smtp_user,
+        smtp_password: config.smtp_password,
+        smtp_from_name: config.smtp_from_name,
+        smtp_secure: config.smtp_secure,
+      },
+    })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   const conectarMicrosoft = () => {
     const clientId = config.microsoft_client_id || import.meta.env.VITE_MICROSOFT_CLIENT_ID || ''
     const tenant = config.microsoft_tenant_id || 'common'
@@ -901,6 +925,92 @@ export default function Configuracion() {
               </p>
               <button
                 onClick={saveVoipStudio}
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 bg-[#001E5D] text-white text-sm font-medium rounded-lg hover:bg-[#002f8a] disabled:opacity-60 transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </ConexionCard>
+
+          <ConexionCard
+            title="Correo (SMTP)"
+            description="Envía correos desde el CRM usando tu propio servidor de correo"
+            logo="✉️"
+            connected={!!(config.smtp_host && config.smtp_user)}
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Servidor SMTP</label>
+                  <input
+                    type="text"
+                    value={config.smtp_host || ''}
+                    onChange={e => setField('smtp_host', e.target.value)}
+                    placeholder="smtp.gmail.com"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#001E5D]/30 focus:border-[#001E5D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Puerto</label>
+                  <input
+                    type="text"
+                    value={config.smtp_port || ''}
+                    onChange={e => setField('smtp_port', e.target.value)}
+                    placeholder="587"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#001E5D]/30 focus:border-[#001E5D]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Usuario / Email</label>
+                  <input
+                    type="text"
+                    value={config.smtp_user || ''}
+                    onChange={e => setField('smtp_user', e.target.value)}
+                    placeholder="correo@tudominio.com"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#001E5D]/30 focus:border-[#001E5D]"
+                  />
+                </div>
+                <SecretInput
+                  label="Contraseña / App Password"
+                  value={config.smtp_password || ''}
+                  onChange={v => setField('smtp_password', v)}
+                  placeholder="••••••••••••"
+                  hint="En Gmail usa una App Password"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del remitente</label>
+                  <input
+                    type="text"
+                    value={config.smtp_from_name || ''}
+                    onChange={e => setField('smtp_from_name', e.target.value)}
+                    placeholder="Segucargo CRM"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#001E5D]/30 focus:border-[#001E5D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Seguridad</label>
+                  <select
+                    value={config.smtp_secure || 'STARTTLS'}
+                    onChange={e => setField('smtp_secure', e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#001E5D]/30 focus:border-[#001E5D]"
+                  >
+                    <option value="STARTTLS">STARTTLS (puerto 587)</option>
+                    <option value="SSL">SSL/TLS (puerto 465)</option>
+                    <option value="none">Sin cifrado (puerto 25)</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">
+                Proveedores comunes: Gmail (smtp.gmail.com:587), Outlook (smtp.office365.com:587), Zoho (smtp.zoho.com:587).
+              </p>
+              <button
+                onClick={saveSmtp}
                 disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 bg-[#001E5D] text-white text-sm font-medium rounded-lg hover:bg-[#002f8a] disabled:opacity-60 transition-colors"
               >
