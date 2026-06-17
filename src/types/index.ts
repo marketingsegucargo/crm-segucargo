@@ -65,6 +65,10 @@ export interface Profile {
   activo: boolean
   created_at: string
   updated_at: string
+  ms_access_token?: string | null
+  ms_refresh_token?: string | null
+  microsoft_access_token?: string | null
+  microsoft_refresh_token?: string | null
 }
 
 export interface Contact {

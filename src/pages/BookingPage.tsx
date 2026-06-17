@@ -53,7 +53,7 @@ export default function BookingPage() {
   const [step, setStep] = useState<'pick' | 'form' | 'confirmed'>('pick')
   const [form, setForm] = useState({ nombre: '', email: '', notas: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [bookingId, setBookingId] = useState<string | null>(null)
+
 
   useEffect(() => {
     if (!slug) return
@@ -77,7 +77,7 @@ export default function BookingPage() {
     if (!page || !selectedDate || !selectedSlot || !selectedDuracion) return
     if (!form.nombre.trim() || !form.email.trim()) return
     setSubmitting(true)
-    const [h, m] = selectedSlot.split(':').map(Number)
+    const [_h, _m] = selectedSlot.split(':').map(Number)
     const dt = new Date(`${selectedDate}T${selectedSlot}:00`)
     const { data, error } = await supabase.from('meeting_bookings').insert({
       page_id: page.id,
@@ -91,7 +91,6 @@ export default function BookingPage() {
     }).select().single()
     setSubmitting(false)
     if (!error && data) {
-      setBookingId(data.id)
       setStep('confirmed')
     }
   }

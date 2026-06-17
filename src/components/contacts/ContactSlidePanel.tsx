@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { X, Save, User, Tag, MapPin } from 'lucide-react'
+import { X, Save, User, Tag, MapPin, GitBranch, Plus, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { ORIGIN_LABELS } from '../../lib/constants'
+import { useAuth } from '../../hooks/useAuth'
 import type { Contact } from '../../types'
 
 interface Props {
@@ -14,14 +15,71 @@ const ORIGIN_OPTIONS = [
   'google_ads','meta_ads','linkedin','whatsapp','web','referido','email','organico'
 ] as const
 
+interface Cadencia { id: string; nombre: string; pasos: { delay_cantidad: number; delay_unidad: string }[] }
+interface Inscripcion { id: string; cadencia_id: string; paso_actual: number; estado: string; proxima_ejecucion: string | null; cadencias?: { nombre: string; pasos: unknown[] } }
+
 export default function ContactSlidePanel({ contact, onClose, onSaved }: Props) {
+  const { profile } = useAuth()
   const [form, setForm] = useState<Partial<Contact>>({})
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState<'info' | 'notas'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'notas' | 'cadencias'>('info')
+
+  // Cadencias state
+  const [cadencias, setCadencias] = useState<Cadencia[]>([])
+  const [inscripciones, setInscripciones] = useState<Inscripcion[]>([])
+  const [selectedCadencia, setSelectedCadencia] = useState('')
+  const [inscribiendo, setInscribiendo] = useState(false)
+  const [cadenciasLoaded, setCadenciasLoaded] = useState(false)
 
   useEffect(() => {
     if (contact) setForm({ ...contact })
   }, [contact])
+
+  useEffect(() => {
+    if (activeTab === 'cadencias' && contact && !cadenciasLoaded) {
+      loadCadencias()
+    }
+  }, [activeTab, contact])
+
+  async function loadCadencias() {
+    const [{ data: cads }, { data: inscs }] = await Promise.all([
+      supabase.from('cadencias').select('id, nombre, pasos').eq('estado', 'activa').order('nombre'),
+      supabase.from('cadencias_inscritos').select('id, cadencia_id, paso_actual, estado, proxima_ejecucion, cadencias(nombre, pasos)').eq('contact_id', contact!.id),
+    ])
+    setCadencias((cads || []) as Cadencia[])
+    setInscripciones((inscs || []) as unknown as Inscripcion[])
+    setCadenciasLoaded(true)
+  }
+
+  async function handleInscribir() {
+    if (!selectedCadencia || !contact || !profile) return
+    const cad = cadencias.find(c => c.id === selectedCadencia)
+    if (!cad) return
+    setInscribiendo(true)
+    const primerPaso = cad.pasos?.[0]
+    const proxima = new Date()
+    if (primerPaso && primerPaso.delay_unidad !== 'inmediato' && primerPaso.delay_cantidad > 0) {
+      proxima.setDate(proxima.getDate() + primerPaso.delay_cantidad)
+    }
+    await supabase.from('cadencias_inscritos').insert({
+      cadencia_id: selectedCadencia,
+      contact_id: contact.id,
+      ejecutivo_id: profile.id,
+      correo_contacto: contact.email,
+      paso_actual: 0,
+      estado: 'activo',
+      proxima_ejecucion: proxima.toISOString(),
+    })
+    setSelectedCadencia('')
+    setCadenciasLoaded(false)
+    await loadCadencias()
+    setInscribiendo(false)
+  }
+
+  async function handleDesinscribir(inscId: string) {
+    await supabase.from('cadencias_inscritos').update({ estado: 'cancelado' }).eq('id', inscId)
+    setInscripciones(prev => prev.map(i => i.id === inscId ? { ...i, estado: 'cancelado' } : i))
+  }
 
   async function handleSave() {
     if (!contact) return
@@ -81,7 +139,7 @@ export default function ContactSlidePanel({ contact, onClose, onSaved }: Props) 
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200 px-6">
-          {(['info', 'notas'] as const).map(tab => (
+          {(['info', 'notas', 'cadencias'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -89,7 +147,7 @@ export default function ContactSlidePanel({ contact, onClose, onSaved }: Props) 
                 activeTab === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              {tab === 'info' ? 'Información' : 'Notas'}
+              {tab === 'info' ? 'Información' : tab === 'notas' ? 'Notas' : 'Cadencias'}
             </button>
           ))}
         </div>
@@ -130,6 +188,89 @@ export default function ContactSlidePanel({ contact, onClose, onSaved }: Props) 
                 </Field>
               </Section>
             </>
+          )}
+
+          {activeTab === 'cadencias' && (
+            <div className="space-y-4">
+              {/* Inscribir en cadencia */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <GitBranch className="w-4 h-4 text-gray-400" />
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Inscribir en cadencia</h3>
+                </div>
+                {!contact.email ? (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Este contacto no tiene email. Agrega uno para poder inscribirlo en cadencias.
+                  </p>
+                ) : (
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedCadencia}
+                      onChange={e => setSelectedCadencia(e.target.value)}
+                      className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#001E5D]/30 focus:border-[#001E5D]"
+                    >
+                      <option value="">Seleccionar cadencia...</option>
+                      {cadencias
+                        .filter(c => !inscripciones.some(i => i.cadencia_id === c.id && i.estado === 'activo'))
+                        .map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)
+                      }
+                    </select>
+                    <button
+                      onClick={handleInscribir}
+                      disabled={!selectedCadencia || inscribiendo || !profile?.ms_access_token}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-[#001E5D] text-white text-sm font-medium rounded-lg hover:bg-[#002b85] disabled:opacity-40 transition-colors"
+                    >
+                      <Plus size={14} />
+                      {inscribiendo ? 'Inscribiendo...' : 'Inscribir'}
+                    </button>
+                  </div>
+                )}
+                {!profile?.ms_access_token && (
+                  <p className="text-xs text-red-500 mt-2">Tu cuenta Microsoft no está conectada. Ve a Perfil → Conectar Microsoft.</p>
+                )}
+              </div>
+
+              {/* Inscripciones activas */}
+              {inscripciones.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Sin cadencias activas</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {inscripciones.map(insc => {
+                    const totalPasos = (insc.cadencias?.pasos as unknown[])?.length || 0
+                    const estadoIcon = insc.estado === 'completado' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> :
+                      insc.estado === 'cancelado' ? <XCircle className="w-4 h-4 text-gray-400" /> :
+                      <Clock className="w-4 h-4 text-blue-500" />
+                    return (
+                      <div key={insc.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {estadoIcon}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{insc.cadencias?.nombre || '—'}</p>
+                            <p className="text-xs text-gray-400">
+                              Paso {(insc.paso_actual || 0) + 1} de {totalPasos || '?'}
+                              {insc.proxima_ejecucion && insc.estado === 'activo' && (
+                                <> · Próximo: {new Date(insc.proxima_ejecucion).toLocaleDateString('es-CL')}</>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        {insc.estado === 'activo' && (
+                          <button
+                            onClick={() => handleDesinscribir(insc.id)}
+                            className="text-xs text-red-400 hover:text-red-600 ml-2 shrink-0"
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === 'notas' && (

@@ -12,11 +12,11 @@ interface Profile {
 interface MeetingPage {
   id?: string
   nombre_interno: string
-  organizador_id: string
-  titulo_evento: string
-  ubicacion: string
-  video_link: string
-  descripcion: string
+  organizador_id: string | null
+  titulo_evento: string | null
+  ubicacion: string | null
+  video_link: string | null
+  descripcion: string | null
   tipo: 'personalizada' | 'grupo' | 'rotacion'
   duraciones: number[]
   slug: string
@@ -115,10 +115,10 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
     const payload = {
       nombre_interno: form.nombre_interno.trim(),
       organizador_id: form.organizador_id || null,
-      titulo_evento: form.titulo_evento.trim() || null,
-      ubicacion: form.ubicacion.trim() || null,
-      video_link: form.video_link.trim() || null,
-      descripcion: form.descripcion.trim() || null,
+      titulo_evento: ( form.titulo_evento ?? "").trim() || null,
+      ubicacion: ( form.ubicacion ?? "").trim() || null,
+      video_link: ( form.video_link ?? "").trim() || null,
+      descripcion: ( form.descripcion ?? "").trim() || null,
       tipo: form.tipo,
       duraciones: form.duraciones,
       slug: form.slug.trim(),
@@ -220,7 +220,7 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
                     </span>
                   </label>
                   <select
-                    value={form.organizador_id}
+                    value={form.organizador_id ?? ''}
                     onChange={e => set('organizador_id', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-gray-50"
                   >
@@ -241,7 +241,7 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
                   </label>
                   <div className="relative">
                     <textarea
-                      value={form.titulo_evento}
+                      value={form.titulo_evento ?? ''}
                       onChange={e => set('titulo_evento', e.target.value)}
                       rows={2}
                       placeholder="Ej: Reunión con {nombre_contacto}"
@@ -262,7 +262,7 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
                     </span>
                   </label>
                   <input
-                    value={form.ubicacion}
+                    value={form.ubicacion ?? ''}
                     onChange={e => set('ubicacion', e.target.value)}
                     placeholder="Ej: Av. Providencia 1234, Santiago"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-gray-50"
@@ -294,7 +294,7 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
                   </div>
                   {form.video_link && (
                     <input
-                      value={form.video_link}
+                      value={form.video_link ?? ''}
                       onChange={e => set('video_link', e.target.value)}
                       placeholder="https://teams.microsoft.com/..."
                       className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -329,7 +329,7 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
                   </label>
                   <div className="border border-gray-300 rounded-lg overflow-hidden">
                     <textarea
-                      value={form.descripcion}
+                      value={form.descripcion ?? ''}
                       onChange={e => set('descripcion', e.target.value)}
                       rows={4}
                       placeholder="Descripción de la reunión para el contacto..."
@@ -360,7 +360,7 @@ export default function MeetingPageForm({ tipo, editing, onClose, onSaved }: Pro
                 <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <p className="text-sm font-medium text-gray-700 mb-2">Organizador principal</p>
                   <select
-                    value={form.organizador_id}
+                    value={form.organizador_id ?? ''}
                     onChange={e => set('organizador_id', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
                   >
