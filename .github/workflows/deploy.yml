@@ -1,0 +1,57 @@
+name: Deploy a VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build producción
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Subir artefacto dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    timeout-minutes: 5
+    steps:
+      - name: Limpiar dist previo
+        run: rm -rf dist
+
+      - name: Descargar artefacto dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Asegurar permisos en directorio de producción
+        run: sudo chown -R runner:runner /docker/crm/ && sudo chmod -R u+w /docker/crm/
+
+      - name: Copiar al directorio de producción
+        run: rsync -a --delete dist/ /docker/crm/
