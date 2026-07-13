@@ -66,8 +66,6 @@ export default function PhoneInput({ value, onChange, placeholder = '9 XXXX XXXX
     onChange(newNumber ? `${prefix} ${newNumber}` : '')
   }
 
-  const flagCurrent = COUNTRY_CODES.find(c => c.code === prefix)?.flag ?? '🌐'
-
   return (
     <div className={`flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#001E5D]/30 focus-within:border-[#001E5D] bg-white ${className}`}>
       <select
