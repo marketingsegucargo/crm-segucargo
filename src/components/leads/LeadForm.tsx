@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { Lead, Profile } from '../../types'
 import { SERVICE_LABELS, ORIGIN_LABELS } from '../../lib/constants'
 import { usersService } from '../../services/users'
+import PhoneInput from '../ui/PhoneInput'
 
 const schema = z.object({
   nombre: z.string().min(2, 'Requerido'),
@@ -43,7 +44,7 @@ export default function LeadForm({ lead, onSubmit, onCancel }: Props) {
   const [ejecutivos, setEjecutivos] = useState<Profile[]>([])
   const [loading, setLoading] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: lead ? {
@@ -104,7 +105,11 @@ export default function LeadForm({ lead, onSubmit, onCancel }: Props) {
         </div>
         <div>
           <label className="label">Teléfono</label>
-          <input {...register('telefono')} className="input" placeholder="+56 9 XXXX XXXX" />
+          <Controller
+            name="telefono"
+            control={control}
+            render={({ field }) => <PhoneInput value={field.value || ''} onChange={field.onChange} />}
+          />
         </div>
       </div>
 

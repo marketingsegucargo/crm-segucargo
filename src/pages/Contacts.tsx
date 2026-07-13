@@ -5,10 +5,11 @@ import ContactSlidePanel from '../components/contacts/ContactSlidePanel'
 import { contactsService } from '../services/contacts'
 import { ORIGIN_LABELS } from '../lib/constants'
 import type { Contact } from '../types'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import ModuleFilters from '../components/common/ModuleFilters'
+import PhoneInput from '../components/ui/PhoneInput'
 
 const schema = z.object({
   nombre: z.string().min(1, 'Requerido'),
@@ -26,7 +27,7 @@ type FormData = z.infer<typeof schema>
 
 function ContactForm({ contact, onSubmit, onCancel }: { contact?: Contact; onSubmit: (d: FormData) => Promise<void>; onCancel: () => void }) {
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: contact ? { ...contact } : { origen: 'web' }
   })
@@ -58,7 +59,10 @@ function ContactForm({ contact, onSubmit, onCancel }: { contact?: Contact; onSub
           <input {...register('email')} type="email" className="input" />
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
-        <div><label className="label">Teléfono</label><input {...register('telefono')} className="input" /></div>
+        <div>
+          <label className="label">Teléfono</label>
+          <Controller name="telefono" control={control} render={({ field }) => <PhoneInput value={field.value || ''} onChange={field.onChange} />} />
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div><label className="label">País</label><input {...register('pais')} className="input" /></div>
