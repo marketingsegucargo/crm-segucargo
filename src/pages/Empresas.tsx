@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Plus, Search, Edit2, Trash2, Building2 } from 'lucide-react'
+import PhoneInput from '../components/ui/PhoneInput'
 import ModuleFilters from '../components/common/ModuleFilters'
 
 interface Empresa {
@@ -247,7 +248,7 @@ export default function Empresas() {
                 </div>
                 <div>
                   <label className="label">Teléfono</label>
-                  <input className="input w-full" value={form.telefono || ''} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} />
+                  <PhoneInput value={form.telefono || ''} onChange={v => setForm(f => ({ ...f, telefono: v }))} />
                 </div>
               </div>
               <div>

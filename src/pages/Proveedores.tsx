@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Plus, Search, Edit2, Trash2, Truck } from 'lucide-react'
+import PhoneInput from '../components/ui/PhoneInput'
 
 interface Proveedor {
   id: string
@@ -227,7 +228,7 @@ export default function Proveedores() {
                 </div>
                 <div>
                   <label className="label">Contacto Teléfono</label>
-                  <input className="input w-full" value={form.contacto_telefono} onChange={e => setForm(f => ({ ...f, contacto_telefono: e.target.value }))} />
+                  <PhoneInput value={form.contacto_telefono || ''} onChange={v => setForm(f => ({ ...f, contacto_telefono: v }))} />
                 </div>
               </div>
               <div>

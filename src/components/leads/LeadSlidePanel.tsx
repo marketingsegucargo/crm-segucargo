@@ -3,6 +3,7 @@ import { X, Save, ExternalLink, MapPin, Package, User, TrendingUp, Tag, AlertCir
 import { supabase } from '../../lib/supabase'
 import { LEAD_STATUS_LABELS, LEAD_STATUS_COLORS, SERVICE_LABELS, ORIGIN_LABELS, LOST_REASONS } from '../../lib/constants'
 import type { Lead, Profile } from '../../types'
+import PhoneInput from '../ui/PhoneInput'
 
 interface Props {
   lead: Lead | null
@@ -148,7 +149,7 @@ export default function LeadSlidePanel({ lead, onClose, onSaved }: Props) {
                   <input className="input" type="email" value={form.email || ''} onChange={e => set('email', e.target.value)} placeholder="email@empresa.com" />
                 </Field>
                 <Field label="Teléfono">
-                  <input className="input" value={form.telefono || ''} onChange={e => set('telefono', e.target.value)} placeholder="+56 9 XXXX XXXX" />
+                  <PhoneInput value={form.telefono || ''} onChange={v => set('telefono', v)} />
                 </Field>
               </Section>
 

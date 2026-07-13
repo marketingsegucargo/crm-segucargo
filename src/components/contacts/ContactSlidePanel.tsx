@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { ORIGIN_LABELS } from '../../lib/constants'
 import { useAuth } from '../../hooks/useAuth'
 import type { Contact } from '../../types'
+import PhoneInput from '../ui/PhoneInput'
 
 interface Props {
   contact: Contact | null
@@ -167,7 +168,7 @@ export default function ContactSlidePanel({ contact, onClose, onSaved }: Props) 
                   <input className="input" type="email" value={form.email || ''} onChange={e => set('email', e.target.value)} placeholder="email@empresa.com" />
                 </Field>
                 <Field label="Teléfono">
-                  <input className="input" value={form.telefono || ''} onChange={e => set('telefono', e.target.value)} placeholder="+56 9 XXXX XXXX" />
+                  <PhoneInput value={form.telefono || ''} onChange={v => set('telefono', v)} />
                 </Field>
               </Section>
 
